@@ -18,7 +18,10 @@ fn classify(ch: char) -> Option<(&'static str, RiskLevel)> {
         '\u{200C}' => Some(("zero-width non-joiner", RiskLevel::Medium)),
         '\u{200D}' => Some(("zero-width joiner", RiskLevel::Medium)),
         '\u{2060}' => Some(("word joiner", RiskLevel::Medium)),
-        '\u{FEFF}' => Some(("byte-order mark / zero-width no-break space", RiskLevel::Medium)),
+        '\u{FEFF}' => Some((
+            "byte-order mark / zero-width no-break space",
+            RiskLevel::Medium,
+        )),
         '\u{200E}' => Some(("left-to-right mark", RiskLevel::Medium)),
         '\u{200F}' => Some(("right-to-left mark", RiskLevel::Medium)),
         _ => None,

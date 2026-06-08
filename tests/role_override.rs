@@ -65,5 +65,7 @@ fn span_aligns_with_match() {
     let findings = RoleOverride.scan(text);
     assert!(!findings.is_empty());
     let slice = &text[findings[0].start..findings[0].end];
-    assert!(slice.to_lowercase().starts_with("ignore previous instructions"));
+    assert!(slice
+        .to_lowercase()
+        .starts_with("ignore previous instructions"));
 }

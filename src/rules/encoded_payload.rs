@@ -9,17 +9,13 @@ use crate::rules::{format_break, role_override, secret_extract, tool_call_inject
 
 pub const NAME: &str = "encoded_payload";
 
-static BASE64_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"[A-Za-z0-9+/]{20,}={0,2}").unwrap());
+static BASE64_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[A-Za-z0-9+/]{20,}={0,2}").unwrap());
 static HEX_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)[0-9a-f]{40,}").unwrap());
 
 fn decode_base64(s: &str) -> Option<String> {
-    // Pad to multiple of 4 for standard alphabet.
-    let mut padded = s.to_string();
-    while padded.len() % 4 != 0 {
-        padded.push('=');
-    }
-    let stripped = padded.trim_end_matches('=');
+    // The matched span may carry trailing '=' padding; the NO_PAD engine
+    // expects it stripped, so drop it before decoding.
+    let stripped = s.trim_end_matches('=');
     let bytes = STANDARD_NO_PAD.decode(stripped.as_bytes()).ok()?;
     let decoded = String::from_utf8(bytes).ok()?;
     if printable_ratio(&decoded) < 0.8 {
@@ -29,7 +25,7 @@ fn decode_base64(s: &str) -> Option<String> {
 }
 
 fn decode_hex(s: &str) -> Option<String> {
-    if s.len() % 2 != 0 {
+    if !s.len().is_multiple_of(2) {
         return None;
     }
     let mut bytes = Vec::with_capacity(s.len() / 2);
@@ -93,9 +89,12 @@ impl Rule for EncodedPayload {
             if let Some(decoded) = decode_base64(m.as_str()) {
                 let inner = inner_scan(&decoded);
                 if !inner.is_empty() {
-                    let messages: Vec<String> =
-                        inner.iter().map(|f| f.message.clone()).collect();
-                    let max_risk = inner.iter().map(|f| f.risk).max().unwrap_or(RiskLevel::Medium);
+                    let messages: Vec<String> = inner.iter().map(|f| f.message.clone()).collect();
+                    let max_risk = inner
+                        .iter()
+                        .map(|f| f.risk)
+                        .max()
+                        .unwrap_or(RiskLevel::Medium);
                     out.push(Finding::new(
                         NAME,
                         m.start(),
@@ -110,9 +109,12 @@ impl Rule for EncodedPayload {
             if let Some(decoded) = decode_hex(m.as_str()) {
                 let inner = inner_scan(&decoded);
                 if !inner.is_empty() {
-                    let messages: Vec<String> =
-                        inner.iter().map(|f| f.message.clone()).collect();
-                    let max_risk = inner.iter().map(|f| f.risk).max().unwrap_or(RiskLevel::Medium);
+                    let messages: Vec<String> = inner.iter().map(|f| f.message.clone()).collect();
+                    let max_risk = inner
+                        .iter()
+                        .map(|f| f.risk)
+                        .max()
+                        .unwrap_or(RiskLevel::Medium);
                     out.push(Finding::new(
                         NAME,
                         m.start(),
